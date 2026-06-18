@@ -1,0 +1,8 @@
+# Enforce LF line endings for all text files on all platforms
+* text=auto eol=lf
+
+# Binaries -- no line-ending conversion
+*.spv  binary
+*.png  binary
+*.jpg  binary
+*.wav  binary
