@@ -1,15 +1,19 @@
 #pragma once
+#include "vilk/audio/audio_state.hpp"
 #include <cstdint>
 #include <memory>
 #include <string_view>
 
+// Forward-declare so consumers don't need to pull in GLFW headers here.
+struct GLFWwindow;
+
 namespace vilk {
 
 struct WindowHandle {
-    void*    native_window;   // HWND / NSWindow* / GLFWwindow* etc
-    void*    native_display;  // HINSTANCE / nil / Display* etc
-    uint32_t width;
-    uint32_t height;
+    GLFWwindow*      window     = nullptr;
+    uint32_t         width      = 0;
+    uint32_t         height     = 0;
+    std::string_view shader_dir = {}; // path to .glsl sources; empty = use embedded fallback
 };
 
 // Opaque handle to a GPU-side shader program loaded from SPIR-V.
@@ -27,6 +31,21 @@ public:
 
     virtual void begin_frame()                        = 0;
     virtual void end_frame()                          = 0;
+
+    // Store audio snapshot; copied into the GPU UBO at the next begin_frame().
+    virtual void update_audio(const AudioSnapshot&)            {}
+    // Upload raw PCM for waveform rendering (called same frame as update_audio).
+    virtual void update_waveform(const WaveformSnapshot&)      {}
+
+    // Recompile both shaders from GLSL source strings and hot-swap the pipeline.
+    // Returns false (no swap) if compilation fails so the old pipeline keeps running.
+    virtual bool reload_shaders(std::string_view /*vert_glsl*/, std::string_view /*frag_glsl*/) { return false; }
+
+    // Swap the composite (final-pass) pipeline with a preset's GLSL 450 shaders.
+    virtual bool reload_preset_composite(std::string_view /*vert_glsl*/, std::string_view /*frag_glsl*/) { return false; }
+
+    // Swap the offscreen warp pipeline with a preset's GLSL 450 shaders.
+    virtual bool reload_preset_warp(std::string_view /*vert_glsl*/, std::string_view /*frag_glsl*/) { return false; }
 
     virtual void resize(uint32_t width, uint32_t height) = 0;
 

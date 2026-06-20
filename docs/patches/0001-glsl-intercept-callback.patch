@@ -1,0 +1,70 @@
+diff --git a/src/libprojectM/MilkdropPreset/MilkdropShader.cpp b/src/libprojectM/MilkdropPreset/MilkdropShader.cpp
+index 10cf919..1551f1b 100644
+--- a/src/libprojectM/MilkdropPreset/MilkdropShader.cpp
++++ b/src/libprojectM/MilkdropPreset/MilkdropShader.cpp
+@@ -21,6 +21,13 @@ namespace MilkdropPreset {
+ 
+ using libprojectM::MilkdropPreset::MilkdropStaticShaders;
+ 
++MilkdropShader::GlslCallback MilkdropShader::s_glslCallback;
++
++void MilkdropShader::SetGlslCallback(GlslCallback cb)
++{
++    s_glslCallback = std::move(cb);
++}
++
+ static auto floatRand = []() { return static_cast<float>(rand() % 7381) / 7380.0f; };
+ 
+ MilkdropShader::MilkdropShader(ShaderType type)
+@@ -690,6 +697,14 @@ void MilkdropShader::TranspileHLSLShader(const PresetState& presetState, std::st
+ 
+     LOG_TRACE("[MilkdropShader] Transpiled GLSL " + shaderTypeString + " shader code:\n" + std::string(generator.GetResult()));
+ 
++    if (s_glslCallback)
++    {
++        const std::string& vertSrc = (m_type == ShaderType::WarpShader)
++            ? MilkdropStaticShaders::Get()->GetPresetWarpVertexShader()
++            : MilkdropStaticShaders::Get()->GetPresetCompVertexShader();
++        s_glslCallback(m_type, generator.GetResult(), vertSrc);
++    }
++
+     // Now we have GLSL source for the preset shader program (hopefully it's valid!)
+     // Compile the preset shader fragment shader with the standard vertex shader and cross our fingers.
+     if (m_type == ShaderType::WarpShader)
+diff --git a/src/libprojectM/MilkdropPreset/MilkdropShader.hpp b/src/libprojectM/MilkdropPreset/MilkdropShader.hpp
+index 2997a82..2982eaf 100644
+--- a/src/libprojectM/MilkdropPreset/MilkdropShader.hpp
++++ b/src/libprojectM/MilkdropPreset/MilkdropShader.hpp
+@@ -13,7 +13,9 @@
+ #include <Renderer/TextureManager.hpp>
+ 
+ #include <array>
++#include <functional>
+ #include <set>
++#include <string_view>
+ 
+ namespace libprojectM {
+ namespace MilkdropPreset {
+@@ -34,6 +36,13 @@ public:
+         CompositeShader //!< Composite shader
+     };
+ 
++    // Callback signature: (shader_type, frag_glsl, vert_glsl). Called at load/switch time, not per-frame.
++    using GlslCallback = std::function<void(ShaderType, std::string_view frag_glsl, std::string_view vert_glsl)>;
++
++    // Set a process-wide callback to receive GLSL source before GL compilation.
++    // Pass nullptr to clear. Not thread-safe with concurrent preset loads.
++    static void SetGlslCallback(GlslCallback cb);
++
+     /**
+      * constructor.
+      * @param type The preset shader type.
+@@ -94,6 +103,8 @@ private:
+      */
+     void UpdateMaxBlurLevel(BlurTexture::BlurLevel requestedLevel);
+ 
++    static GlslCallback s_glslCallback; //!< Process-wide GLSL intercept callback.
++
+     ShaderType m_type{ShaderType::WarpShader}; //!< Type of this shader.
+     std::string m_fragmentShaderCode;          //!< The original preset fragment shader code.
+     std::string m_preprocessedCode;            //!< The preprocessed preset shader code.

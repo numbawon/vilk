@@ -1,9 +1,14 @@
 add_library(vilk_render STATIC
     render_backend.cpp
+    shader_watcher.cpp
 )
 
 target_include_directories(vilk_render PUBLIC
     ${PROJECT_SOURCE_DIR}/include
+)
+
+target_include_directories(vilk_render PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 target_link_libraries(vilk_render PUBLIC vilk_platform_defs)

@@ -95,13 +95,21 @@ This ordering means: if Phase 2/3 research turns out harder than expected, there
 - Validation layers on by default in debug builds.
 - **Exit criterion:** a textured quad bouncing through a ping-pong pass, fed by a runtime-compiled SPIR-V shader, with no projectM code involved.
 
-### Phase 2 — projectM integration research (spike)
-- Vendor libprojectM 4.x as a git submodule (see Section 6 for why submodule-and-patch, not fork).
-- Build it standalone first (with `-DENABLE_SDL_UI=ON` for the legacy test UI) to confirm the toolchain works before touching internals.
-- Locate and document the exact call path from preset-load to `hlslparser`'s GLSL generation output. Identify the smallest patch that exposes that GLSL string (and associated uniform/sampler metadata) to external code, without disrupting projectM's own GL rendering path (which we may still want as the literal fallback-of-the-fallback during development, to A/B against).
-- In parallel, prove the simpler "render-to-texture" path actually works as a documented capability — this is the fallback safety net if the hlslparser interception turns out to be more invasive than expected. Treat this as a checkpoint: if Phase 2 research stalls, this path keeps the project moving.
-- Watch PR #877 status.
-- **Exit criterion:** a documented, minimal patch (ideally <a few hundred lines) against vendored libprojectM that exposes per-preset GLSL source + metadata to host code, plus a working render-to-texture fallback as backup.
+### Phase 2 — projectM integration research (spike) ✅ COMPLETE (2026-06-18)
+
+**What was done:**
+- Vendored libprojectM 4.1.0 as `third_party/projectm` git submodule (shallow, with `vendor/projectm-eval` nested submodule initialized).
+- Confirmed standalone build: 107 targets, zero errors, only harmless GLM C4201 warnings.
+- Traced the full GLSL generation call path in `MilkdropShader::TranspileHLSLShader()` (`src/libprojectM/MilkdropPreset/MilkdropShader.cpp`): `generator.Generate()` produces GLSL, `generator.GetResult()` returns it, then `m_shader.CompileProgram(vertSrc, fragSrc)` does the GL compile.
+- Wrote a **26-line patch** adding `MilkdropShader::SetGlslCallback()` — a static `std::function` hook that fires between GLSL generation and GL compilation, exposing both `frag_glsl` and `vert_glsl` without disrupting projectM's own GL path. Patch saved to `docs/patches/0001-glsl-intercept-callback.patch`.
+- Confirmed render-to-texture fallback is viable: `Preset::OutputTexture()->TextureID()` yields a `GLuint`. CPU readback via `glReadPixels` is platform-universal but slow (~6ms/frame at 1080p). Zero-copy GPU interop uses `GL_EXT_memory_object_win32` (Windows) / `GL_EXT_memory_object_fd` (Linux). Primary GLSL-intercept path avoids this entirely.
+- PR #877 ("Renderer backend selection") checked: still **OPEN/WIP** as of 2026-06-18 — do not depend on it.
+
+**Uniform/sampler metadata findings:**
+- All per-frame uniforms (`_c0`–`_c13`, `rand_frame`, `rand_preset`, `vertex_transformation`, `_qa`–`_qh`, 24 rotation matrices) are set by `MilkdropShader::LoadVariables()`. This runs every frame — we can replicate the same writes in our Vulkan UBO/descriptor path in Phase 3.
+- Texture sampler names are collected into `m_samplerNames` at load time by `GetReferencedSamplers()`. Main texture ("main") is the ping-pong feedback target; other samplers load from the texture manager by name.
+
+**Exit criterion:** ✅ 26-line patch exposing per-preset GLSL source to host code; render-to-texture fallback path documented and confirmed viable.
 
 ### Phase 3 — Shader cross-compile + feedback pipeline
 - GLSL → SPIR-V at preset-load/switch time using the runtime path proven in Phase 1.
@@ -129,12 +137,14 @@ This ordering means: if Phase 2/3 research turns out harder than expected, there
 | Build system | CMake 3.21+ | Required by projectM 4.x anyway; only sane cross-platform option |
 | Platforms | Windows, Linux, macOS from day one | Explicit requirement |
 
-## 7. Open questions for Claude Code to resolve during Phase 2 spike (not decided yet)
+## 7. Open questions (status as of 2026-06-18)
 
-- GLFW vs SDL3 for the app shell — leaning toward whichever simplifies swapchain + audio-input glue most, not yet decided.
-- Exact shape of the libprojectM patch — can't be specified precisely until Phase 2 research reads the real current source tree (this doc's Section 2 findings are from documentation/PR descriptions, not a full source read — Claude Code should do a full read of `src/libprojectM/Renderer/` and `src/libprojectM/Renderer/hlslparser/` before writing the patch).
-- glslang vs shaderc for runtime GLSL→SPIR-V — both are viable; pick based on whichever has the cleaner runtime (non-CLI) API for the target platforms.
-- Whether macOS needs MoltenVK considerations baked in from Phase 1, given Vulkan isn't native there.
+| Question | Status |
+|---|---|
+| GLFW vs SDL3 | **Decided: GLFW.** Code already uses it; audio stays separate. |
+| Exact shape of libprojectM patch | **Done.** 26-line `SetGlslCallback()` hook in `MilkdropShader`. See `docs/patches/0001-glsl-intercept-callback.patch`. |
+| glslang vs shaderc | **Decided: glslang.** `cmake/Glslang.cmake` exists; `spirv_compiler.cpp` uses it. |
+| macOS MoltenVK | **Still open.** No Mac-specific code yet. When targeting macOS, need to either bundle MoltenVK or link `libMoltenVK.dylib` and add `VK_KHR_portability_enumeration` to the instance creation path. Not blocking Phase 3. |
 
 ## 8. Non-goals / explicit scope boundaries
 

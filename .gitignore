@@ -1,6 +1,9 @@
 build/
 *.spv
-.vscode/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/*.code-workspace
 .idea/
 *.user
 CMakeCache.txt
@@ -18,3 +21,5 @@ Thumbs.db
 cmake_install.cmake
 install_manifest.txt
 CTestTestfile.cmake
+TODO.md
+*.log

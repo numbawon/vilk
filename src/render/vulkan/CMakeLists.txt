@@ -1,5 +1,8 @@
 add_library(vilk_render_vulkan STATIC
     vulkan_backend.cpp
+    vk_pipeline.cpp
+    spirv_compiler.cpp
+    preset_glsl_adapter.cpp
 )
 
 target_include_directories(vilk_render_vulkan PUBLIC
@@ -9,6 +12,10 @@ target_include_directories(vilk_render_vulkan PUBLIC
 target_link_libraries(vilk_render_vulkan PUBLIC
     vilk_platform_defs
     Vulkan::Vulkan
+    glfw
+    glslang
+    SPIRV
+    glslang-default-resource-limits
 )
 
 # Phase 1 test shaders -- hand-written GLSL compiled to SPIR-V at build time.

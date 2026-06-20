@@ -1,0 +1,64 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/build/_deps/glfw-src/include",
+                "${workspaceFolder}/build/_deps/glslang-src",
+                "${workspaceFolder}/build/_deps/kissfft-src",
+                "${workspaceFolder}/third_party/projectm/src/api/include",
+                "${workspaceFolder}/build/third_party/projectm/src/api/include",
+                "C:/VulkanSDK/1.4.350.0/Include"
+            ],
+            "defines": [
+                "VILK_PLATFORM_WINDOWS",
+                "VILK_AUDIO_WASAPI",
+                "VILK_ENABLE_VALIDATION",
+                "_WIN32",
+                "WIN32"
+            ],
+            "intelliSenseMode": "windows-msvc-x64",
+            "cppStandard": "c++20"
+        },
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/build/_deps/glfw-src/include",
+                "${workspaceFolder}/build/_deps/glslang-src",
+                "${workspaceFolder}/build/_deps/kissfft-src",
+                "${env:VULKAN_SDK}/include",
+                "/usr/include"
+            ],
+            "defines": [
+                "VILK_PLATFORM_LINUX",
+                "VILK_AUDIO_PULSEAUDIO",
+                "VILK_ENABLE_VALIDATION"
+            ],
+            "intelliSenseMode": "linux-gcc-x64",
+            "cppStandard": "c++20"
+        },
+        {
+            "name": "macOS",
+            "includePath": [
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/build/_deps/glfw-src/include",
+                "${workspaceFolder}/build/_deps/glslang-src",
+                "${workspaceFolder}/build/_deps/kissfft-src",
+                "${env:VULKAN_SDK}/include"
+            ],
+            "defines": [
+                "VILK_PLATFORM_MACOS",
+                "VILK_AUDIO_COREAUDIO",
+                "VILK_ENABLE_VALIDATION"
+            ],
+            "intelliSenseMode": "macos-clang-x64",
+            "cppStandard": "c++20"
+        }
+    ],
+    "version": 4
+}

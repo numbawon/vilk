@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 project(vilk LANGUAGES CXX C)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -12,6 +12,11 @@ option(VILK_ENABLE_VALIDATION "Enable Vulkan validation layers in debug" ON)
 
 include(cmake/Platform.cmake)
 include(cmake/CompileShaders.cmake)
+include(cmake/GLFW.cmake)
+include(cmake/Glslang.cmake)
+include(cmake/KissFFT.cmake)
+include(cmake/Presets.cmake)
+include(cmake/ProjectM.cmake)
 
 if(VILK_VULKAN_BACKEND)
     find_package(Vulkan REQUIRED)

@@ -1,16 +1,19 @@
 add_library(vilk_audio STATIC
     audio_capture.cpp
+    fft_processor.cpp
 )
 
 target_include_directories(vilk_audio PUBLIC
     ${PROJECT_SOURCE_DIR}/include
 )
 
-target_link_libraries(vilk_audio PUBLIC vilk_platform_defs)
+target_link_libraries(vilk_audio PUBLIC  vilk_platform_defs)
+target_link_libraries(vilk_audio PRIVATE kissfft)
 
 # Platform-specific implementation
 if(WIN32)
     target_sources(vilk_audio PRIVATE wasapi/wasapi_capture.cpp)
+    target_link_libraries(vilk_audio PRIVATE ole32 uuid)
 elseif(APPLE)
     target_sources(vilk_audio PRIVATE coreaudio/coreaudio_capture.cpp)
 elseif(UNIX)
